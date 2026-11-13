@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8fb">
+  <title>我的代辦清單</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js" defer></script>
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <main class="container">
+    <header class="topbar">
+      <div><p class="eyebrow">我的日常計畫</p><h1>代辦清單 <span>✦</span></h1><p class="subtitle">每完成一件事，就前進一點。</p></div>
+      <div class="account"><span id="accountEmail"></span><button id="logoutButton" class="secondary hidden" type="button">登出</button></div>
+    </header>
+
+    <section id="setupPanel" class="panel hidden" aria-labelledby="setupTitle">
+      <h2 id="setupTitle">先連接雲端資料庫</h2>
+      <p>請開啟 <strong>script.js</strong>，將最上面的「專案網址」和「公開金鑰」換成自己的雲端專案資料，然後重新開啟網頁。</p>
+    </section>
+
+    <section id="authPanel" class="panel auth-panel hidden" aria-labelledby="authTitle">
+      <h2 id="authTitle">登入你的清單</h2><p class="muted">使用相同帳號，即可在手機和電腦查看同一份資料。</p>
+      <form id="authForm">
+        <label for="email">電子郵件</label><input id="email" type="email" autocomplete="email" required placeholder="你的電子郵件">
+        <label for="password">密碼（至少 6 個字元）</label><input id="password" type="password" autocomplete="current-password" minlength="6" required placeholder="輸入密碼">
+        <div class="auth-actions"><button id="loginButton" type="submit">登入</button><button id="signupButton" class="secondary" type="button">註冊新帳號</button></div>
+      </form>
+    </section>
+
+    <section id="appPanel" class="hidden">
+      <div class="stats">
+        <article class="stat"><span>全部任務</span><strong id="totalCount">0</strong></article>
+        <article class="stat"><span>待完成</span><strong id="pendingCount">0</strong></article>
+        <article class="stat"><span>已完成</span><strong id="doneCount">0</strong></article>
+      </div>
+      <section class="panel" aria-labelledby="addTitle">
+        <h2 id="addTitle">新增一件待辦事項</h2>
+        <form id="taskForm">
+          <label for="taskTitle">任務名稱</label><input id="taskTitle" maxlength="120" required placeholder="例如：準備期末報告">
+          <div class="fields">
+            <div><label for="taskCategory">分類</label><select id="taskCategory"><option>課業</option><option>研究</option><option>工作</option><option>個人</option></select></div>
+            <div><label for="taskPriority">優先程度</label><select id="taskPriority"><option value="一般">一般</option><option value="重要">重要</option><option value="緊急">緊急</option></select></div>
+            <div><label for="taskDue">截止日期</label><input id="taskDue" type="date"></div>
+          </div>
+          <button id="addButton" type="submit">＋ 新增任務</button>
+        </form>
+      </section>
+      <section class="panel task-panel" aria-labelledby="listTitle">
+        <div class="list-head"><h2 id="listTitle">我的任務</h2><span id="syncStatus" class="muted" aria-live="polite"></span></div>
+        <div class="filters" aria-label="篩選任務">
+          <button type="button" class="filter active" data-filter="全部">全部</button>
+          <button type="button" class="filter" data-filter="待完成">待完成</button>
+          <button type="button" class="filter" data-filter="已完成">已完成</button>
+        </div>
+        <ul id="taskList" class="task-list"></ul>
+        <p id="emptyMessage" class="empty hidden">目前沒有符合條件的任務。</p>
+      </section>
+    </section>
+    <p id="notice" class="notice" role="status" aria-live="polite"></p>
+    <footer>你的清單會儲存在自己的雲端帳號中。請勿在共用電腦保持登入。</footer>
+  </main>
+</body>
+</html>

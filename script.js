@@ -95,7 +95,15 @@ async function 初始化登入狀態() {
 async function 啟動() {
   if (專案網址.startsWith("請填入") || 公開金鑰.startsWith("請填入")) {顯示畫面("setupPanel"); return;}
   if (!window.supabase?.createClient) {顯示畫面("setupPanel");顯示訊息("無法載入雲端程式庫，請確認網路連線。");return;}
-  雲端 = window.supabase.createClient(專案網址, 公開金鑰);
+  // 保留登入狀態：關閉網頁後再次開啟，會自動恢復帳號登入。
+  // 登出、無痕模式或清除網站資料後，仍需要重新登入。
+  雲端 = window.supabase.createClient(專案網址, 公開金鑰, {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
+    }
+  });
   await 初始化登入狀態();
   雲端.auth.onAuthStateChange((事件) => {
     if (事件 === "SIGNED_IN" || 事件 === "SIGNED_OUT") {

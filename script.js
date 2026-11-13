@@ -8,6 +8,7 @@ let 使用者 = null;
 let 任務 = [];
 let 篩選 = "全部";
 let 同步中 = false;
+let 編輯中 = false;
 
 function 顯示訊息(內容) { $("notice").textContent = 內容; }
 function 顯示畫面(名稱) {
@@ -17,7 +18,7 @@ function 錯誤內容(錯誤) { return 錯誤?.message || "發生未知錯誤，
 
 // 所有資料都由 Supabase 的資料列安全規則限制為「只能存取自己的任務」。
 async function 取得任務() {
-  if (!使用者 || 同步中) return;
+  if (!使用者 || 同步中 || 編輯中) return;
   同步中 = true;
   $("syncStatus").textContent = "同步中…";
   try {
@@ -64,12 +65,83 @@ function 繪製任務() {
     內容.append(標題, 標籤列); 主體.append(勾選, 內容);
     const 操作 = document.createElement("div"); 操作.className = "task-actions";
     const 編輯 = document.createElement("button"); 編輯.className = "small"; 編輯.textContent = "編輯";
-    編輯.addEventListener("click", async () => {
-      const 新名稱 = prompt("修改任務名稱：", 項目.title);
-      if (新名稱 === null || !新名稱.trim()) return;
-      const {error} = await 雲端.from("tasks").update({title:新名稱.trim().slice(0,120)}).eq("id", 項目.id).eq("user_id", 使用者.id);
-      if (error) 顯示訊息("編輯失敗：" + 錯誤內容(error));
-      await 取得任務();
+    // 直接在任務下方編輯，不使用手機瀏覽器可能封鎖的彈出視窗。
+    編輯.addEventListener("click", () => {
+      if (編輯中) { 顯示訊息("請先完成目前正在編輯的任務。"); return; }
+      編輯中 = true;
+      const 表單 = document.createElement("form");
+      表單.className = "edit-form";
+      const 標題欄 = document.createElement("input");
+      標題欄.value = 項目.title;
+      標題欄.maxLength = 120;
+      標題欄.required = true;
+      標題欄.setAttribute("aria-label", "任務名稱");
+
+      const 分類欄 = document.createElement("select");
+      分類欄.setAttribute("aria-label", "任務分類");
+      for (const 名稱 of ["課業", "研究", "工作", "個人"]) {
+        const 選項 = document.createElement("option");
+        選項.value = 名稱; 選項.textContent = 名稱;
+        分類欄.append(選項);
+      }
+      分類欄.value = 項目.category;
+
+      const 優先欄 = document.createElement("select");
+      優先欄.setAttribute("aria-label", "優先程度");
+      for (const 名稱 of ["一般", "重要", "緊急"]) {
+        const 選項 = document.createElement("option");
+        選項.value = 名稱; 選項.textContent = 名稱;
+        優先欄.append(選項);
+      }
+      優先欄.value = 項目.priority;
+
+      const 日期欄 = document.createElement("input");
+      日期欄.type = "date";
+      日期欄.value = 項目.due_date || "";
+      日期欄.setAttribute("aria-label", "截止日期");
+
+      const 按鈕列 = document.createElement("div");
+      按鈕列.className = "edit-actions";
+      const 儲存 = document.createElement("button");
+      儲存.type = "submit"; 儲存.textContent = "儲存修改";
+      const 取消 = document.createElement("button");
+      取消.type = "button"; 取消.className = "secondary"; 取消.textContent = "取消";
+      取消.addEventListener("click", () => {
+        編輯中 = false;
+        表單.remove();
+        行.classList.remove("hidden");
+        顯示訊息("");
+        取得任務();
+      });
+      按鈕列.append(儲存, 取消);
+      表單.append(標題欄, 分類欄, 優先欄, 日期欄, 按鈕列);
+      列.append(表單);
+      行.classList.add("hidden");
+      標題欄.focus();
+
+      表單.addEventListener("submit", async (事件) => {
+        事件.preventDefault();
+        const 新名稱 = 標題欄.value.trim();
+        if (!新名稱) { 顯示訊息("任務名稱不能留白。"); return; }
+        儲存.disabled = true;
+        取消.disabled = true;
+        try {
+          const {error} = await 雲端.from("tasks").update({
+            title: 新名稱,
+            category: 分類欄.value,
+            priority: 優先欄.value,
+            due_date: 日期欄.value || null
+          }).eq("id", 項目.id).eq("user_id", 使用者.id);
+          if (error) throw error;
+          編輯中 = false;
+          顯示訊息("修改已儲存！");
+          await 取得任務();
+        } catch (錯誤) {
+          顯示訊息("編輯失敗：" + 錯誤內容(錯誤));
+          儲存.disabled = false;
+          取消.disabled = false;
+        }
+      });
     });
     const 刪除 = document.createElement("button"); 刪除.className = "small danger"; 刪除.textContent = "移除";
     刪除.addEventListener("click", async () => {
